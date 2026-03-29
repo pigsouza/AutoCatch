@@ -1,308 +1,316 @@
-local Library = require("@self/library")
+	local Library = require("@self/library")
 
-local window = Library:CreateWindow({
-	Title = "Auto catch",
-	Center = true,
-	AutoShow = true,
-	TabPadding = 8,
-	MenuFadeTime = 0.2,
-})
+	local window = Library:CreateWindow({
+		Title = "Auto catch",
+		Center = true,
+		AutoShow = true,
+		TabPadding = 8,
+		MenuFadeTime = 0.2,
+	})
 
-local tab = window:AddTab("Main")
-local tabGroupLeft = tab:AddLeftGroupbox("Groupbox")
+	local tab = window:AddTab("Main")
+	local tabGroupLeft = tab:AddLeftGroupbox("Groupbox")
 
-tabGroupLeft:AddToggle("AutoCatchToggle", {
-	Text = "Auto catch",
-	Default = false,
-	Tooltip = "enabled/disabled auto catch",
-	Callback = function()
-	end,
-})
+	tabGroupLeft:AddToggle("AutoCatchToggle", {
+		Text = "Auto catch",
+		Default = false,
+		Tooltip = "enabled/disabled auto catch",
+		Callback = function()
+		end,
+	})
 
-tabGroupLeft:AddToggle("LuckyBlockToggle", {
-	Text = "Collect all lucky blocks",
-	Default = false,
-	Tooltip = "enabled/disabled collect all lucky blocks",
-	Callback = function()
-	end,
-})
+	tabGroupLeft:AddToggle("LuckyBlockToggle", {
+		Text = "Collect all lucky blocks",
+		Default = false,
+		Tooltip = "enabled/disabled collect all lucky blocks",
+		Callback = function()
+		end,
+	})
 
-tabGroupLeft:AddToggle("AutoBuyFoodToggle", {
-	Text = "Auto buy food",
-	Default = false,
-	Tooltip = "enabled/disabled auto buy food",
-	Callback = function()
-	end,
-})
+	tabGroupLeft:AddToggle("AutoBuyFoodToggle", {
+		Text = "Auto buy food",
+		Default = false,
+		Tooltip = "enabled/disabled auto buy food",
+		Callback = function()
+		end,
+	})
 
-local tabGroupRight = tab:AddRightGroupbox("Pets")
-local rarities = { "Common", "Rare", "Epic", "Legendary", "Mythical", "Exclusive", "Secret", "Boss" }
-local RaritiesPets = require("@self/pets")
-for i, v in rarities do
-	local pets = RaritiesPets[v]
-	if not pets then
-		continue
-	end
-
-	local newPets = {}
-	for index, name in pets do
-	    if name:find("Lucky Block") then
+	local tabGroupRight = tab:AddRightGroupbox("Pets")
+	local rarities = { "Common", "Rare", "Epic", "Legendary", "Mythical", "Exclusive", "Secret", "Boss" }
+	local RaritiesPets = require("@self/pets")
+	for i, v in rarities do
+		local pets = RaritiesPets[v]
+		if not pets then
 			continue
-	    end
-		table.insert(newPets, name)
-	end
-	pets = newPets
+		end
 
-	table.sort(pets, function(a, b)
-		return string.lower(tostring(a)) < string.lower(tostring(b))
+		local newPets = {}
+		for index, name in pets do
+			if name:find("Lucky Block") then
+				continue
+			end
+			table.insert(newPets, name)
+		end
+		pets = newPets
+
+		table.sort(pets, function(a, b)
+			return string.lower(tostring(a)) < string.lower(tostring(b))
+		end)
+
+		local dropdown = tabGroupRight:AddDropdown(`Pets-{v}`, {
+			Values = pets,
+			Default = 1,
+			Multi = true,
+			Text = v,
+			Tooltip = "select pets",
+			Callback = function(selected)
+			end,
+		})
+
+		tabGroupRight:AddButton({
+			Text = "Select all",
+			Func = function()
+				local selected = {}
+				for i, v in dropdown.Values do
+					selected[v] = true
+				end
+				dropdown:SetValue(selected)
+			end,
+			DoubleClick = false,
+			Tooltip = "select all pets",
+		})
+
+		tabGroupRight:AddButton({
+			Text = "Unselect all",
+			Func = function()
+				dropdown:SetValue({})
+			end,
+			DoubleClick = false,
+			Tooltip = "unselect all pets",
+		})
+
+		if i ~= #rarities then
+			tabGroupRight:AddDivider()
+		end
+	end
+
+	-- main
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local Players = game:GetService("Players")
+	local RunService = game:GetService("RunService")
+
+	local Remotes = ReplicatedStorage.Remotes
+	local minigameRequest = Remotes.minigameRequest
+	local retrieveData = Remotes.retrieveData
+	local updateProgress = Remotes.UpdateProgress
+
+	local player = Players.LocalPlayer
+
+	-- Anti AFK
+	local VirtualUser = game:GetService("VirtualUser")
+	player.Idled:Connect(function()
+		VirtualUser:CaptureController()
+		VirtualUser:ClickButton2(Vector2.new())
 	end)
 
-	local dropdown = tabGroupRight:AddDropdown(`Pets-{v}`, {
-		Values = pets,
-		Default = 1,
-		Multi = true,
-		Text = v,
-		Tooltip = "select pets",
-		Callback = function(selected)
-		end,
-	})
-
-	tabGroupRight:AddButton({
-	    Text = "Select all",
-		Func = function()
-		    local selected = {}
-			for i, v in dropdown.Values do
-				selected[v] = true
-			end
-			dropdown:SetValue(selected)
-		end,
-		DoubleClick = false,
-		Tooltip = "select all pets",
-	})
-
-	tabGroupRight:AddButton({
-	    Text = "Unselect all",
-		Func = function()
-			dropdown:SetValue({})
-		end,
-		DoubleClick = false,
-		Tooltip = "unselect all pets",
-	})
-
-	if i ~= #rarities then
-		tabGroupRight:AddDivider()
+	local character
+	local function CharacterAdded(newCharacter)
+		character = newCharacter
 	end
-end
 
--- main
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+	if player.Character then
+		CharacterAdded(player.Character)
+	end
+	player.CharacterAdded:Connect(CharacterAdded)
 
-local Remotes = ReplicatedStorage.Remotes
-local minigameRequest = Remotes.minigameRequest
-local retrieveData = Remotes.retrieveData
-local updateProgress = Remotes.UpdateProgress
+	type Dropdown = typeof(tabGroupRight:AddDropdown("", {}))
+	type Keybind = typeof(tabGroupRight:AddKeybind("", {}))
+	local options: {
+		Islands: Dropdown,
+		RaritiesToCapture: Dropdown,
+		MenuKeybind: Keybind,
+	} = {}
+	for i, v in getgenv().Options do
+		options[i] = v
+	end
 
-local player = Players.LocalPlayer
-local character
-local function CharacterAdded(newCharacter)
-    character = newCharacter
-end
+	type Toggle = typeof(tabGroupLeft:AddToggle("", {}))
+	local toggles = (getgenv().Toggles :: {
+		AutoCatchToggle: Toggle,
+		LuckyBlockToggle: Toggle,
+	})
 
-if player.Character then
-    CharacterAdded(player.Character)
-end
-player.CharacterAdded:Connect(CharacterAdded)
+	local islands = { "Roaming", "IceIsland", "SkyIsland", "WaterIsland", "BeeIsland" }
+	for i, v in islands do
+		islands[i] = workspace:FindFirstChild(`{v}Pets`)
+	end
+	local function CatchPets()
+		for _, islandFolder in islands do
+			local pets = islandFolder:FindFirstChild("Pets")
+			if not pets then
+				continue
+			end
 
-type Dropdown = typeof(tabGroupRight:AddDropdown("", {}))
-type Keybind = typeof(tabGroupRight:AddKeybind("", {}))
-local options: {
-    Islands: Dropdown,
-    RaritiesToCapture: Dropdown,
-    MenuKeybind: Keybind,
-} = {}
-for i, v in getgenv().Options do
-    options[i] = v
-end
+			for _, pet in pets:GetChildren() do
+				if not pet.PrimaryPart then
+					continue
+				end
 
-type Toggle = typeof(tabGroupLeft:AddToggle("", {}))
-local toggles = (getgenv().Toggles :: {
-    AutoCatchToggle: Toggle,
-    LuckyBlockToggle: Toggle,
-})
+				local rarity = pet:GetAttribute("Rarity")
+				local petName = pet:GetAttribute("Name")
+				if not petName or not rarity then
+					continue
+				end
 
-local islands = { "Roaming", "IceIsland", "SkyIsland", "WaterIsland", "BeeIsland" }
-for i, v in islands do
-    islands[i] = workspace:FindFirstChild(`{v}Pets`)
-end
-local function CatchPets()
-    for _, islandFolder in islands do
-        local pets = islandFolder:FindFirstChild("Pets")
-        if not pets then
-            continue
-        end
+				local dropdown = options[`Pets-{rarity}`]
+				if not (
+					(toggles.LuckyBlockToggle.Value and petName:lower():find("lucky block")) or
+					(dropdown and dropdown.Value[petName])
+				) then
+					continue
+				end
 
-        for _, pet in pets:GetChildren() do
-            if not pet.PrimaryPart then
-                continue
-            end
+				local myCFrame = character:GetPrimaryPartCFrame()
+				local ok = minigameRequest:InvokeServer(pet, myCFrame)
+				local l = tick()
+				while not ok and tick() - l < 3 do
+					task.wait()
+					ok = minigameRequest:InvokeServer(pet, myCFrame)
+				end
 
-            local rarity = pet:GetAttribute("Rarity")
-            local petName = pet:GetAttribute("Name")
-            if not petName or not rarity then
-                continue
-            end
+				if not ok then
+					continue
+				end
 
-            local dropdown = options[`Pets-{rarity}`]
-            if not (
-                (toggles.LuckyBlockToggle.Value and petName:lower():find("lucky block")) or
-                (dropdown and dropdown.Value[petName])
-            ) then
-                continue
-            end
+				retrieveData:InvokeServer()
 
-            local myCFrame = character:GetPrimaryPartCFrame()
-            local ok = minigameRequest:InvokeServer(pet, myCFrame)
-            local l = tick()
-            while not ok and tick() - l < 3 do
-                task.wait()
-                ok = minigameRequest:InvokeServer(pet, myCFrame)
-            end
-
-            if not ok then
-                continue
-            end
-
-            retrieveData:InvokeServer()
-
-            local total = 0
-            for i = 1, 100 do
-                total = math.min(100, total + (i + math.random()))
-                updateProgress:FireServer(total)
-                if total == 100 then
-                    break
-                end
-            end
-        end
-        task.wait()
-    end
-end
-
--- Auto Buy Food
-local RS = game:GetService("ReplicatedStorage")
-local BuyFoodRemote = nil
-pcall(function() BuyFoodRemote = RS.Packages._Index["sleitnick_knit@1.7.0"].knit.Services.FoodService.RE.BuyFood end)
-local FoodServiceRE = RS.Packages._Index["sleitnick_knit@1.7.0"].knit.Services.FoodService.RE
-
-local BUYABLE_FOODS = {
-	{ name = "Farmers Feed", price = 75 },
-	{ name = "Enriched Feed", price = 150 },
-	{ name = "Hay",          price = 300 },
-	{ name = "Bone",         price = 800 },
-	{ name = "Prime Feed",   price = 5000 },
-	{ name = "Steak",        price = 15000 },
-	{ name = "Stew",         price = 35000 },
-}
-
-local cashRawRef = player:FindFirstChild("CashRaw")
-local function getPlayerMoney()
-	if cashRawRef and cashRawRef.Parent then return cashRawRef.Value end
-	return 0
-end
-
-local function buyFood(foodName)
-	if not BuyFoodRemote then return end
-	pcall(function() BuyFoodRemote:FireServer(foodName) end)
-end
-
-local stockConn1, stockConn2, merchantConn
-
-local function connectAutoBuyFood()
-	stockConn1 = FoodServiceRE.ReplicateStock.OnClientEvent:Connect(function(stock)
-		if not stock then return end
-		for item, amount in pairs(stock) do
-			if amount > 0 then
-				for _, food in ipairs(BUYABLE_FOODS) do
-					if food.name == item and getPlayerMoney() >= food.price then
-						buyFood(item)
+				local total = 0
+				for i = 1, 100 do
+					total = math.min(100, total + (i + math.random()))
+					updateProgress:FireServer(total)
+					if total == 100 then
 						break
 					end
 				end
 			end
+			task.wait()
 		end
-	end)
+	end
 
-	stockConn2 = FoodServiceRE.ReplicateStock2.OnClientEvent:Connect(function(stock)
-		if not stock then return end
-		for item, amount in pairs(stock) do
-			if amount > 0 then
-				for _, food in ipairs(BUYABLE_FOODS) do
-					if food.name == item and getPlayerMoney() >= food.price then
-						buyFood(item)
-						break
+	-- Auto Buy Food
+	local RS = game:GetService("ReplicatedStorage")
+	local BuyFoodRemote = nil
+	pcall(function() BuyFoodRemote = RS.Packages._Index["sleitnick_knit@1.7.0"].knit.Services.FoodService.RE.BuyFood end)
+	local FoodServiceRE = RS.Packages._Index["sleitnick_knit@1.7.0"].knit.Services.FoodService.RE
+
+	local BUYABLE_FOODS = {
+		{ name = "Farmers Feed", price = 75 },
+		{ name = "Enriched Feed", price = 150 },
+		{ name = "Hay",          price = 300 },
+		{ name = "Bone",         price = 800 },
+		{ name = "Prime Feed",   price = 5000 },
+		{ name = "Steak",        price = 15000 },
+		{ name = "Stew",         price = 35000 },
+	}
+
+	local cashRawRef = player:FindFirstChild("CashRaw")
+	local function getPlayerMoney()
+		if cashRawRef and cashRawRef.Parent then return cashRawRef.Value end
+		return 0
+	end
+
+	local function buyFood(foodName)
+		if not BuyFoodRemote then return end
+		pcall(function() BuyFoodRemote:FireServer(foodName) end)
+	end
+
+	local stockConn1, stockConn2, merchantConn
+
+	local function connectAutoBuyFood()
+		stockConn1 = FoodServiceRE.ReplicateStock.OnClientEvent:Connect(function(stock)
+			if not stock then return end
+			for item, amount in pairs(stock) do
+				if amount > 0 then
+					for _, food in ipairs(BUYABLE_FOODS) do
+						if food.name == item and getPlayerMoney() >= food.price then
+							buyFood(item)
+							break
+						end
 					end
 				end
 			end
+		end)
+
+		stockConn2 = FoodServiceRE.ReplicateStock2.OnClientEvent:Connect(function(stock)
+			if not stock then return end
+			for item, amount in pairs(stock) do
+				if amount > 0 then
+					for _, food in ipairs(BUYABLE_FOODS) do
+						if food.name == item and getPlayerMoney() >= food.price then
+							buyFood(item)
+							break
+						end
+					end
+				end
+			end
+		end)
+
+		merchantConn = RS.Remotes.RequestMerchant.OnClientEvent:Connect(function(data)
+			if not data or not data.Items then return end
+			pcall(function() RS.Remotes.BuyMerchant:FireServer(data) end)
+		end)
+	end
+
+	local function disconnectAutoBuyFood()
+		if stockConn1 then stockConn1:Disconnect(); stockConn1 = nil end
+		if stockConn2 then stockConn2:Disconnect(); stockConn2 = nil end
+		if merchantConn then merchantConn:Disconnect(); merchantConn = nil end
+	end
+
+	toggles.AutoBuyFoodToggle:OnChanged(function(active)
+		if active then connectAutoBuyFood() else disconnectAutoBuyFood() end
+	end)
+
+	local oldConnection
+	toggles.AutoCatchToggle:OnChanged(function(active)
+		if oldConnection then
+			oldConnection:Disconnect()
+		end
+
+		if active then
+			oldConnection = RunService.RenderStepped:Connect(CatchPets)
 		end
 	end)
 
-	merchantConn = RS.Remotes.RequestMerchant.OnClientEvent:Connect(function(data)
-		if not data or not data.Items then return end
-		pcall(function() RS.Remotes.BuyMerchant:FireServer(data) end)
+	Library:OnUnload(function()
+		if oldConnection then
+			oldConnection:Disconnect()
+		end
+		disconnectAutoBuyFood()
 	end)
-end
 
-local function disconnectAutoBuyFood()
-	if stockConn1 then stockConn1:Disconnect(); stockConn1 = nil end
-	if stockConn2 then stockConn2:Disconnect(); stockConn2 = nil end
-	if merchantConn then merchantConn:Disconnect(); merchantConn = nil end
-end
+	local UISettings = window:AddTab("UI Settings")
+	local SettingsGroup = UISettings:AddLeftGroupbox('Menu')
+	SettingsGroup:AddButton('Unload', function()
+		Library:Unload()
+	end)
 
-toggles.AutoBuyFoodToggle:OnChanged(function(active)
-	if active then connectAutoBuyFood() else disconnectAutoBuyFood() end
-end)
+	SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
+		Default = "End",
+		NoUI = true,
+		Text = "Menu keybind"
+	})
 
-local oldConnection
-toggles.AutoCatchToggle:OnChanged(function(active)
-    if oldConnection then
-        oldConnection:Disconnect()
-    end
+	Library["ToggleKeybind"] = getgenv().Options.MenuKeybind
 
-    if active then
-        oldConnection = RunService.RenderStepped:Connect(CatchPets)
-    end
-end)
-
-Library:OnUnload(function()
-	if oldConnection then
-		oldConnection:Disconnect()
-	end
-	disconnectAutoBuyFood()
-end)
-
-local UISettings = window:AddTab("UI Settings")
-local SettingsGroup = UISettings:AddLeftGroupbox('Menu')
-SettingsGroup:AddButton('Unload', function()
-    Library:Unload()
-end)
-
-SettingsGroup:AddLabel('Menu bind'):AddKeyPicker('MenuKeybind', {
-    Default = "End",
-    NoUI = true,
-    Text = "Menu keybind"
-})
-
-Library["ToggleKeybind"] = getgenv().Options.MenuKeybind
-
-local SaveManager = require("@self/SaveManager")
-local ThemeManager = require("@self/ThemeManager")
-SaveManager:SetLibrary(Library)
-ThemeManager:SetLibrary(Library)
-SaveManager:IgnoreThemeSettings()
-SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
-ThemeManager:SetFolder("AutoCatch")
-SaveManager:SetFolder("AutoCatch/catch-and-fezes")
-SaveManager:BuildConfigSection(UISettings)
-ThemeManager:ApplyToTab(UISettings)
-SaveManager:LoadAutoloadConfig()
+	local SaveManager = require("@self/SaveManager")
+	local ThemeManager = require("@self/ThemeManager")
+	SaveManager:SetLibrary(Library)
+	ThemeManager:SetLibrary(Library)
+	SaveManager:IgnoreThemeSettings()
+	SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+	ThemeManager:SetFolder("AutoCatch")
+	SaveManager:SetFolder("AutoCatch/catch-and-fezes")
+	SaveManager:BuildConfigSection(UISettings)
+	ThemeManager:ApplyToTab(UISettings)
+	SaveManager:LoadAutoloadConfig()
