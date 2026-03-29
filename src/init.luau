@@ -27,6 +27,14 @@ tabGroupLeft:AddToggle("LuckyBlockToggle", {
 	end,
 })
 
+tabGroupLeft:AddToggle("AutoBuyFoodToggle", {
+	Text = "Auto buy food",
+	Default = false,
+	Tooltip = "enabled/disabled auto buy food",
+	Callback = function()
+	end,
+})
+
 local tabGroupRight = tab:AddRightGroupbox("Pets")
 local rarities = { "Common", "Rare", "Epic", "Legendary", "Mythical", "Exclusive", "Secret", "Boss" }
 local RaritiesPets = require("@self/pets")
@@ -181,6 +189,80 @@ local function CatchPets()
     end
 end
 
+-- Auto Buy Food
+local RS = game:GetService("ReplicatedStorage")
+local BuyFoodRemote = nil
+pcall(function() BuyFoodRemote = RS.Packages._Index["sleitnick_knit@1.7.0"].knit.Services.FoodService.RE.BuyFood end)
+local FoodServiceRE = RS.Packages._Index["sleitnick_knit@1.7.0"].knit.Services.FoodService.RE
+
+local BUYABLE_FOODS = {
+	{ name = "Farmers Feed", price = 75 },
+	{ name = "Enriched Feed", price = 150 },
+	{ name = "Hay",          price = 300 },
+	{ name = "Bone",         price = 800 },
+	{ name = "Prime Feed",   price = 5000 },
+	{ name = "Steak",        price = 15000 },
+	{ name = "Stew",         price = 35000 },
+}
+
+local cashRawRef = player:FindFirstChild("CashRaw")
+local function getPlayerMoney()
+	if cashRawRef and cashRawRef.Parent then return cashRawRef.Value end
+	return 0
+end
+
+local function buyFood(foodName)
+	if not BuyFoodRemote then return end
+	pcall(function() BuyFoodRemote:FireServer(foodName) end)
+end
+
+local stockConn1, stockConn2, merchantConn
+
+local function connectAutoBuyFood()
+	stockConn1 = FoodServiceRE.ReplicateStock.OnClientEvent:Connect(function(stock)
+		if not stock then return end
+		for item, amount in pairs(stock) do
+			if amount > 0 then
+				for _, food in ipairs(BUYABLE_FOODS) do
+					if food.name == item and getPlayerMoney() >= food.price then
+						buyFood(item)
+						break
+					end
+				end
+			end
+		end
+	end)
+
+	stockConn2 = FoodServiceRE.ReplicateStock2.OnClientEvent:Connect(function(stock)
+		if not stock then return end
+		for item, amount in pairs(stock) do
+			if amount > 0 then
+				for _, food in ipairs(BUYABLE_FOODS) do
+					if food.name == item and getPlayerMoney() >= food.price then
+						buyFood(item)
+						break
+					end
+				end
+			end
+		end
+	end)
+
+	merchantConn = RS.Remotes.RequestMerchant.OnClientEvent:Connect(function(data)
+		if not data or not data.Items then return end
+		pcall(function() RS.Remotes.BuyMerchant:FireServer(data) end)
+	end)
+end
+
+local function disconnectAutoBuyFood()
+	if stockConn1 then stockConn1:Disconnect(); stockConn1 = nil end
+	if stockConn2 then stockConn2:Disconnect(); stockConn2 = nil end
+	if merchantConn then merchantConn:Disconnect(); merchantConn = nil end
+end
+
+toggles.AutoBuyFoodToggle:OnChanged(function(active)
+	if active then connectAutoBuyFood() else disconnectAutoBuyFood() end
+end)
+
 local oldConnection
 toggles.AutoCatchToggle:OnChanged(function(active)
     if oldConnection then
@@ -193,9 +275,10 @@ toggles.AutoCatchToggle:OnChanged(function(active)
 end)
 
 Library:OnUnload(function()
-    if oldConnection then
-        oldConnection:Disconnect()
-    end
+	if oldConnection then
+		oldConnection:Disconnect()
+	end
+	disconnectAutoBuyFood()
 end)
 
 local UISettings = window:AddTab("UI Settings")
