@@ -140,60 +140,52 @@
 		LuckyBlockToggle: Toggle,
 	})
 
-	local islands = { "Roaming", "IceIsland", "SkyIsland", "WaterIsland", "BeeIsland" }
-	for i, v in islands do
-		islands[i] = workspace:FindFirstChild(`{v}Pets`)
-	end
+	local islands = {
+		workspace.IceIslandPets,
+		workspace.RoamingPets,
+		workspace.SkyIslandPets,
+		workspace.WaterIslandPets,
+		workspace.BeeIslandPets,
+	}
+
 	local function CatchPets()
-		for _, islandFolder in islands do
-			local pets = islandFolder:FindFirstChild("Pets")
-			if not pets then
-				continue
-			end
+		for _, island in islands do
+			local pets = island:FindFirstChild("Pets")
+			if not pets then continue end
 
 			for _, pet in pets:GetChildren() do
-				if not pet.PrimaryPart then
-					continue
-				end
+				if not toggles.AutoCatchToggle.Value then break end
+				if not pet.PrimaryPart then continue end
 
 				local rarity = pet:GetAttribute("Rarity")
 				local petName = pet:GetAttribute("Name")
-				if not petName or not rarity then
-					continue
-				end
+				if not petName or not rarity then continue end
 
 				local dropdown = options[`Pets-{rarity}`]
 				if not (
 					(toggles.LuckyBlockToggle.Value and petName:lower():find("lucky block")) or
 					(dropdown and dropdown.Value[petName])
-				) then
-					continue
-				end
+				) then continue end
 
 				local myCFrame = character:GetPrimaryPartCFrame()
 				local ok = minigameRequest:InvokeServer(pet, myCFrame)
-				local l = tick()
-				while not ok and tick() - l < 3 do
+				while not ok do
+					if not toggles.AutoCatchToggle.Value then break end
 					task.wait()
 					ok = minigameRequest:InvokeServer(pet, myCFrame)
 				end
 
-				if not ok then
-					continue
-				end
+				if not ok then continue end
 
 				retrieveData:InvokeServer()
 
 				local total = 0
 				for i = 1, 100 do
 					total = math.min(100, total + (i + math.random()))
-					updateProgress:FireServer(total)
-					if total == 100 then
-						break
-					end
+					updateProgress:FireServer(math.min(100, total))
+					if total >= 100 then break end
 				end
 			end
-			task.wait()
 		end
 	end
 
@@ -275,10 +267,13 @@
 	toggles.AutoCatchToggle:OnChanged(function(active)
 		if oldConnection then
 			oldConnection:Disconnect()
+			oldConnection = nil
 		end
-
 		if active then
-			oldConnection = RunService.RenderStepped:Connect(CatchPets)
+			oldConnection = RunService.Heartbeat:Connect(function()
+				if not toggles.AutoCatchToggle.Value then return end
+				task.spawn(CatchPets)
+			end)
 		end
 	end)
 
