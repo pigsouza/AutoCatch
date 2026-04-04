@@ -148,45 +148,54 @@
 		workspace.BeeIslandPets,
 	}
 
-	local function CatchPets()
-		for _, island in islands do
-			local pets = island:FindFirstChild("Pets")
-			if not pets then continue end
+	local catching = false
 
-			for _, pet in pets:GetChildren() do
+	local function CatchLoop()
+		while toggles.AutoCatchToggle.Value do
+			for _, island in islands do
 				if not toggles.AutoCatchToggle.Value then break end
-				if not pet.PrimaryPart then continue end
+				local pets = island:FindFirstChild("Pets")
+				if not pets then continue end
 
-				local rarity = pet:GetAttribute("Rarity")
-				local petName = pet:GetAttribute("Name")
-				if not petName or not rarity then continue end
-
-				local dropdown = options[`Pets-{rarity}`]
-				if not (
-					(toggles.LuckyBlockToggle.Value and petName:lower():find("lucky block")) or
-					(dropdown and dropdown.Value[petName])
-				) then continue end
-
-				local myCFrame = character:GetPrimaryPartCFrame()
-				local ok = minigameRequest:InvokeServer(pet, myCFrame)
-				while not ok do
+				for _, pet in pets:GetChildren() do
 					if not toggles.AutoCatchToggle.Value then break end
-					task.wait()
-					ok = minigameRequest:InvokeServer(pet, myCFrame)
-				end
+					if not pet.PrimaryPart then continue end
 
-				if not ok then continue end
+					local rarity = pet:GetAttribute("Rarity")
+					local petName = pet:GetAttribute("Name")
+					if not petName or not rarity then continue end
 
-				retrieveData:InvokeServer()
+					local dropdown = options[`Pets-{rarity}`]
+					if not (
+						(toggles.LuckyBlockToggle.Value and petName:lower():find("lucky block")) or
+						(dropdown and dropdown.Value[petName])
+					) then continue end
 
-				local total = 0
-				for i = 1, 100 do
-					total = math.min(100, total + (i + math.random()))
-					updateProgress:FireServer(math.min(100, total))
-					if total >= 100 then break end
+					local myCFrame = character:GetPrimaryPartCFrame()
+					local ok = minigameRequest:InvokeServer(pet, myCFrame)
+					while not ok do
+						if not toggles.AutoCatchToggle.Value then break end
+						task.wait()
+						ok = minigameRequest:InvokeServer(pet, myCFrame)
+					end
+
+					if not ok then continue end
+
+					retrieveData:InvokeServer()
+
+					local total = 0
+					for i = 1, 100 do
+						total = math.min(100, total + (i + math.random()))
+						updateProgress:FireServer(math.min(100, total))
+						if total >= 100 then break end
+					end
+
+					task.wait(3)
 				end
 			end
+			task.wait(1)
 		end
+		catching = false
 	end
 
 	-- Auto Buy Food
@@ -263,24 +272,17 @@
 		if active then connectAutoBuyFood() else disconnectAutoBuyFood() end
 	end)
 
-	local oldConnection
 	toggles.AutoCatchToggle:OnChanged(function(active)
-		if oldConnection then
-			oldConnection:Disconnect()
-			oldConnection = nil
-		end
 		if active then
-			oldConnection = RunService.Heartbeat:Connect(function()
-				if not toggles.AutoCatchToggle.Value then return end
-				task.spawn(CatchPets)
-			end)
+			if catching then return end
+			catching = true
+			task.spawn(CatchLoop)
+		else
+			catching = false
 		end
 	end)
 
 	Library:OnUnload(function()
-		if oldConnection then
-			oldConnection:Disconnect()
-		end
 		disconnectAutoBuyFood()
 	end)
 
