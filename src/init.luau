@@ -3,7 +3,7 @@ local SaveManager = require("@self/SaveManager")
 local ThemeManager = require("@self/ThemeManager")
 
 local window = Library:CreateWindow({
-    Title = "Auto Catch - Ultra Optimized v3",
+    Title = "Auto Catch - Ultra Optimized v4",
     Center = true,
     AutoShow = true,
     TabPadding = 8,
@@ -50,16 +50,31 @@ local RaritiesPets = require("@self/pets")
 for i, v in ipairs(rarities) do
     local pets = RaritiesPets[v]
     if not pets then continue end
+    
     local cleanPets = {}
-    for _, name in ipairs(pets) do if not name:find("Lucky Block") then table.insert(cleanPets, name) end end
+    for _, name in ipairs(pets) do 
+        if not name:find("Lucky Block") then table.insert(cleanPets, name) end 
+    end
     table.sort(cleanPets)
 
-    local dropdown = tabGroupRight:AddDropdown(`Pets-{v}`, { Values = cleanPets, Default = 1, Multi = true, Text = v })
+    local dropdown = tabGroupRight:AddDropdown(`Pets-{v}`, { 
+        Values = cleanPets, 
+        Default = 1, 
+        Multi = true, 
+        Text = v 
+    })
+
+    -- BOTÕES DE SELEÇÃO (RESTORED)
     tabGroupRight:AddButton({Text = "Select All", Func = function()
         local selected = {}
         for _, petName in ipairs(dropdown.Values) do selected[petName] = true end
         dropdown:SetValue(selected)
     end})
+
+    tabGroupRight:AddButton({Text = "Unselect All", Func = function()
+        dropdown:SetValue({})
+    end})
+
     if i ~= #rarities then tabGroupRight:AddDivider() end
 end
 
@@ -69,7 +84,7 @@ webhookGroup:AddToggle("WebhookToggle", { Text = "Ativar Webhook", Default = fal
 webhookGroup:AddInput("WebhookURL", { Default = "", Text = "URL do Webhook", Finished = true, Placeholder = "Cole o link aqui..." })
 
 -- ==========================================
--- SISTEMA DE WEBHOOK (REFORMULADO)
+-- SISTEMA DE WEBHOOK
 -- ==========================================
 local options = getgenv().Options
 local toggles = getgenv().Toggles
@@ -81,7 +96,6 @@ local function sendWebhook(petName, rarity, size, rps)
 
     task.spawn(function()
         local data = {
-            username = "Auto Catch Bot",
             embeds = {{
                 title = "🐾 Pet Capturado!",
                 description = string.format("A conta **%s** capturou um novo animal!", player.Name),
@@ -92,35 +106,31 @@ local function sendWebhook(petName, rarity, size, rps)
                     { name = "Tamanho", value = tostring(size), inline = true },
                     { name = "RPS", value = tostring(rps), inline = true }
                 },
-                footer = { text = "Gemini AI Optimizer" },
+                footer = { text = "Auto Catch Event Mode" },
                 timestamp = DateTime.now():ToIsoDate()
             }}
         }
 
-        local success, res = pcall(function()
-            return request({
+        pcall(function()
+            request({
                 Url = url,
                 Method = "POST",
                 Headers = { ["Content-Type"] = "application/json" },
                 Body = HttpService:JSONEncode(data)
             })
         end)
-        
-        if not success then
-            warn("[Webhook Error]: Falha ao enviar requisição.")
-        end
     end)
 end
 
 -- ==========================================
--- LÓGICA DE CAPTURA (SUPREMA)
+-- LÓGICA DE CAPTURA (EVENTO FOCADO)
 -- ==========================================
 local catching = false
 
 local function CatchLoop()
     while toggles.AutoCatchToggle.Value do
         local locations = {
-            workspace:FindFirstChild("NewEventIslandPets"),
+            workspace:FindFirstChild("NewEventIslandPets"), -- CAMINHO QUE VOCÊ PASSOU
             workspace:FindFirstChild("IceIslandPets"),
             workspace:FindFirstChild("RoamingPets"),
             workspace:FindFirstChild("SkyIslandPets"),
@@ -135,11 +145,10 @@ local function CatchLoop()
             for _, pet in ipairs(folder:GetChildren()) do
                 if not toggles.AutoCatchToggle.Value then break end
                 
-                -- Se o Pet for apenas o UUID, pegamos os atributos
+                -- Os atributos estão dentro do objeto com nome de UUID
                 local petName = pet:GetAttribute("Name")
                 local rarity = pet:GetAttribute("Rarity")
                 
-                -- Se os atributos ainda não carregaram, pulamos (UUID puro ainda)
                 if not petName or not rarity then continue end
 
                 local size = pet:GetAttribute("Size") or "Normal"
@@ -155,7 +164,6 @@ local function CatchLoop()
                 if toggles.LuckyBlockToggle.Value and petName:lower():find("lucky block") then
                     isSelected = true
                 elseif dropdown and dropdown.Value then
-                    -- Busca inteligente por nome
                     for name, enabled in pairs(dropdown.Value) do
                         if enabled and string.lower(name:gsub("%s","")) == string.lower(petName:gsub("%s","")) then
                             isSelected = true
@@ -165,22 +173,22 @@ local function CatchLoop()
                 end
 
                 if isSelected and pet:FindFirstChild("PrimaryPart") then
-                    -- Usa a posição do pet para não dar erro de distância
+                    -- Usa a posição exata do pet para evitar erro de distância do servidor
                     local targetPos = pet.PrimaryPart.CFrame
                     
                     local success = minigameRequest:InvokeServer(pet, targetPos)
                     
                     if success then
                         retrieveData:InvokeServer()
-                        -- Minigame ultra rápido
+                        -- Progresso rápido
                         for i = 1, 4 do
                             updateProgress:FireServer(i * 25)
                             task.wait()
                         end
                         
-                        -- Envia Webhook após capturar
+                        -- Dispara o Webhook
                         sendWebhook(petName, rarity, size, rps)
-                        task.wait(0.3)
+                        task.wait(0.2)
                     end
                 end
             end
