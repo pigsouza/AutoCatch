@@ -61,6 +61,41 @@ for _, rarity in ipairs(raritiesToCreate) do
     })
 end
 
+local BlinkTab = Windows:NewTab({
+    Title = "Auto Blink",
+    Description = "Teleporte Invisível",
+    Icon = "rbxassetid://10261314948" -- Ícone de raio/teleporte
+})
+
+local BlinkIslandSection = BlinkTab:NewSection({ Title = "Controle de Ilhas", Icon = "rbxassetid://7743869054", Position = "Left" })
+local BlinkRaritySection = BlinkTab:NewSection({ Title = "Filtro de Raridades", Icon = "rbxassetid://7733964719", Position = "Right" })
+
+BlinkIslandSection:NewToggle({
+    Title = "Ativar Blink em Cave",
+    Default = false,
+    Callback = function(state)
+        getgenv().AutoCatchConfig.Blink.Islands.Cave = state
+    end,
+})
+
+BlinkIslandSection:NewToggle({
+    Title = "Ativar Blink em Safari",
+    Default = false,
+    Callback = function(state)
+        getgenv().AutoCatchConfig.Blink.Islands.Safari = state
+    end,
+})
+
+for _, rarity in ipairs(raritiesToCreate) do
+    BlinkRaritySection:NewToggle({
+        Title = "Capturar " .. rarity,
+        Default = false,
+        Callback = function(state)
+            getgenv().AutoCatchConfig.Blink.TargetRarities[rarity] = state
+        end,
+    })
+end
+
 if getgenv().StartFarm then
     getgenv().StartFarm(Notification)
 end
