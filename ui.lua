@@ -41,7 +41,7 @@ MainSection:NewToggle({
         if state then
             Notification.new({
                 Title = "Filtro Adicionado",
-                Description = "Secret Lucky Blocks também serão capturados!",
+                Description = "Secret Lucky Blocks também serão capturados.",
                 Duration = 3,
                 Icon = "rbxassetid://8997385628"
             })
