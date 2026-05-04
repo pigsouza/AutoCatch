@@ -9,7 +9,6 @@ getgenv().AutoCatchConfig = {
     }
 }
 
--- Baixa e executa os módulos direto da raiz do repositório
 loadstring(game:HttpGet(githubUrl .. "farm.lua"))()
 loadstring(game:HttpGet(githubUrl .. "ui.lua"))()
 
