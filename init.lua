@@ -1,4 +1,4 @@
-local githubUrl = "https://raw.githubusercontent.com/pigsouza/AutoCatch/main/"
+local githubUrl = "https://raw.githubusercontent.com/pigsouza/AutoCatch/bot-dsc/"
 
 getgenv().AutoCatchConfig = {
     AutoCatch = false,
@@ -9,7 +9,7 @@ getgenv().AutoCatchConfig = {
     }
 }
 
-loadstring(game:HttpGet(githubUrl .. "bot-dsc/farm.lua"))()
-loadstring(game:HttpGet(githubUrl .. "bot-dsc/ui.lua"))()
+loadstring(game:HttpGet(githubUrl .. "src/farm.lua"))()
+loadstring(game:HttpGet(githubUrl .. "src/ui.lua"))()
 
 print("O script foi carregado.")
