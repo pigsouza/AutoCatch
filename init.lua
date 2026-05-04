@@ -1,7 +1,8 @@
 local githubUrl = "https://raw.githubusercontent.com/pigsouza/AutoCatch/bot-dsc/"
 
-getgenv().AutoCatchConfig = {
+getgenv().AutoCatchConfig = getgenv().AutoCatchConfig or {
     AutoCatch = false,
+    SecretLuckyBlockOnly = false,
     TargetRarities = {
         Common = false, Rare = false, Epic = false,
         Legendary = false, Mythical = false, Secret = false,
