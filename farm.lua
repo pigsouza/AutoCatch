@@ -25,12 +25,13 @@ end
 
 getgenv().StartFarm = function(NotificationUI)
     task.spawn(function()
+        local petsSendoCapturados = {}
+
         while task.wait(0.5) do
             if not getgenv().AutoCatchConfig.AutoCatch then continue end
             
             local character = player.Character
             if not character or not character:FindFirstChild("HumanoidRootPart") then continue end
-            local myCFrame = character.HumanoidRootPart.CFrame
 
             local petFolders = getPetFolders()
             
@@ -40,21 +41,29 @@ getgenv().StartFarm = function(NotificationUI)
                 for _, pet in pairs(petContainer:GetChildren()) do
                     if not getgenv().AutoCatchConfig.AutoCatch then break end
                     
+                    if petsSendoCapturados[pet] then continue end
+                    
                     if pet:IsA("Model") and pet.PrimaryPart then
                         local rarity = pet:GetAttribute("Rarity")
                         local petName = pet:GetAttribute("Name") or pet.Name
                         
                         local deveCapturar = false
                         
-                        if rarity and getgenv().AutoCatchConfig.TargetRarities[rarity] then
-                            deveCapturar = true
-                        end
-                        
-                        if getgenv().AutoCatchConfig.SecretLuckyBlockOnly and rarity == "Secret" and petName == "Secret Lucky Block" then
-                            deveCapturar = true
+                        if getgenv().AutoCatchConfig.SecretLuckyBlockOnly then
+                            if petName == "Secret Lucky Block" and rarity == "Secret" then
+                                deveCapturar = true
+                            end
+                        else
+                            if rarity and getgenv().AutoCatchConfig.TargetRarities[rarity] then
+                                deveCapturar = true
+                            end
                         end
                         
                         if deveCapturar then
+                            petsSendoCapturados[pet] = true 
+                            
+                            local myCFrame = character.HumanoidRootPart.CFrame
+                            
                             local tentativas = 0
                             local ok = minigameRequest:InvokeServer(pet, myCFrame)
                             
@@ -62,21 +71,31 @@ getgenv().StartFarm = function(NotificationUI)
                                 if not getgenv().AutoCatchConfig.AutoCatch then break end
                                 task.wait(0.1)
                                 tentativas = tentativas + 1
+                                
+                                if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                                    myCFrame = player.Character.HumanoidRootPart.CFrame
+                                end
                                 ok = minigameRequest:InvokeServer(pet, myCFrame)
                             end
 
-                            if not ok then continue end
+                            if not ok then 
+                                petsSendoCapturados[pet] = nil
+                                continue 
+                            end
 
                             retrieveData:InvokeServer()
+                            task.wait(0.1) 
 
                             local total = 0
                             for i = 1, 100 do
+                                if not getgenv().AutoCatchConfig.AutoCatch then break end
                                 total = math.min(100, total + (i + math.random()))
                                 updateProgress:FireServer(math.min(100, total))
                                 if total == 100 then break end
+                                task.wait()
                             end
 
-                            if NotificationUI then
+                            if NotificationUI and getgenv().AutoCatchConfig.AutoCatch then
                                 NotificationUI.new({
                                     Title = "Pet Capturado!",
                                     Description = petName .. " [" .. rarity .. "]",
@@ -85,7 +104,8 @@ getgenv().StartFarm = function(NotificationUI)
                                 })
                             end
                             
-                            task.wait(1.5) 
+                            task.wait(2.5) 
+                            petsSendoCapturados[pet] = nil
                         end
                     end
                 end
