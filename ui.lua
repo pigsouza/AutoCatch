@@ -33,6 +33,22 @@ MainSection:NewToggle({
     end,
 })
 
+MainSection:NewToggle({
+    Title = "Pegar Secret Lucky Block",
+    Default = false,
+    Callback = function(state)
+        getgenv().AutoCatchConfig.SecretLuckyBlockOnly = state
+        if state then
+            Notification.new({
+                Title = "Filtro Adicionado",
+                Description = "Secret Lucky Blocks também serão capturados!",
+                Duration = 3,
+                Icon = "rbxassetid://8997385628"
+            })
+        end
+    end,
+})
+
 local raritiesToCreate = {"Common", "Rare", "Epic", "Legendary", "Mythical", "Secret", "Boss", "Divine"}
 
 for _, rarity in ipairs(raritiesToCreate) do
