@@ -44,7 +44,17 @@ getgenv().StartFarm = function(NotificationUI)
                         local rarity = pet:GetAttribute("Rarity")
                         local petName = pet:GetAttribute("Name") or pet.Name
                         
+                        local deveCapturar = false
+                        
                         if rarity and getgenv().AutoCatchConfig.TargetRarities[rarity] then
+                            deveCapturar = true
+                        end
+                        
+                        if getgenv().AutoCatchConfig.SecretLuckyBlockOnly and rarity == "Secret" and petName == "Secret Lucky Block" then
+                            deveCapturar = true
+                        end
+                        
+                        if deveCapturar then
                             local tentativas = 0
                             local ok = minigameRequest:InvokeServer(pet, myCFrame)
                             
