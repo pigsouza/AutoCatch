@@ -1,3 +1,5 @@
+local githubUrl = "https://raw.githubusercontent.com/pigsouza/AutoCatch/bot-dsc/"
+
 getgenv().AutoCatchConfig = getgenv().AutoCatchConfig or {
     AutoCatch = false,
     SecretLuckyBlockOnly = false,
@@ -6,7 +8,7 @@ getgenv().AutoCatchConfig = getgenv().AutoCatchConfig or {
         Legendary = false, Mythical = false, Secret = false,
         Boss = false, Divine = false
     },
-   Blink = {
+    Blink = {
         Islands = {
             Cave = false,
             Safari = false
@@ -18,3 +20,8 @@ getgenv().AutoCatchConfig = getgenv().AutoCatchConfig or {
         }
     }
 }
+
+loadstring(game:HttpGet(githubUrl .. "farm.lua"))()
+loadstring(game:HttpGet(githubUrl .. "ui.lua"))()
+
+print("O script foi carregado.")
