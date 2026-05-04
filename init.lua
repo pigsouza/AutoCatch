@@ -9,7 +9,8 @@ getgenv().AutoCatchConfig = {
     }
 }
 
-loadstring(game:HttpGet(githubUrl .. "src/farm.lua"))()
-loadstring(game:HttpGet(githubUrl .. "src/ui.lua"))()
+-- Baixa e executa os módulos direto da raiz do repositório
+loadstring(game:HttpGet(githubUrl .. "farm.lua"))()
+loadstring(game:HttpGet(githubUrl .. "ui.lua"))()
 
 print("O script foi carregado.")
