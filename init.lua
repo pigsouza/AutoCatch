@@ -9,7 +9,7 @@ getgenv().AutoCatchConfig = {
     }
 }
 
-loadstring(game:HttpGet(githubUrl .. "src/farm.lua"))()
-loadstring(game:HttpGet(githubUrl .. "src/ui.lua"))()
+loadstring(game:HttpGet(githubUrl .. "bot-dsc/farm.lua"))()
+loadstring(game:HttpGet(githubUrl .. "bot-dsc/ui.lua"))()
 
 print("O script foi carregado.")
