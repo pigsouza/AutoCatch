@@ -5,7 +5,7 @@ local Windows = NothingLibrary.new({
     Title = "zyt hub",
     Description = "Auto Catch Otimizado",
     Keybind = Enum.KeyCode.RightControl,
-    Logo = "rbxassetid://83982299599280"
+    Logo = "rbxthumb://type=Asset&id=88324996950394&w=150&h=150"
 })
 
 local TabFrame = Windows:NewTab({
