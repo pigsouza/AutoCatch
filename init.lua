@@ -4,7 +4,7 @@ local VirtualUser = game:GetService("VirtualUser")
 Players.LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
     VirtualUser:ClickButton2(Vector2.new())
-    print("Anti-AFK: Prevenindo desconexão!")
+    print("Anti-AFK")
 end)
 
 local githubUrl = "https://raw.githubusercontent.com/pigsouza/AutoCatch/bot-dsc/"
