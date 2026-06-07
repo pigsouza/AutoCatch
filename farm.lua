@@ -202,11 +202,3 @@ getgenv().StartFarm = function(NotificationUI)
         end
     end)
 end
-
--- Carrega o módulo de egg
-loadstring(game:HttpGet(githubUrl .. "egg.lua"))()
-
--- Inicia o listener quando StartFarm for chamado
-if getgenv().StartEggListener then
-    getgenv().StartEggListener(nil) -- NotificationUI será passado depois
-end
